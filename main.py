@@ -5,11 +5,15 @@
 画像読み込み処理を実行する。
 """
 
-from __future__ import annotations
-
 import sys
 
+import numpy as np
+
 from src.image_loader import ImageLoadError, load_image
+from src.splitter import create_voronoi_map, extract_pieces
+
+
+PIECE_COUNT = 20
 
 
 def get_image_path() -> str:
@@ -42,6 +46,33 @@ def main() -> None:
         f"(サイズ: {width}x{height})"
     )
 
+    labels = create_voronoi_map(
+        image=image,
+        piece_count=PIECE_COUNT,
+    )
+
+    print("\n=== Voronoi Map 情報 ===")
+    print(f"shape: {labels.shape}")
+    print(f"dtype: {labels.dtype}")
+    print(f"min label: {labels.min()}")
+    print(f"max label: {labels.max()}")
+    print(f"unique labels: {len(np.unique(labels))}")
+
+    pieces = extract_pieces(
+        image=image,
+        labels=labels,
+    )
+
+    print("\n=== Piece 情報 ===")
+    print(f"生成した画像片数: {len(pieces)}")
+
+    for piece in pieces:
+        print(
+            f"id={piece.id}, "
+            f"size={piece.image.size}, "
+            f"mode={piece.image.mode},"
+            f"bbox={piece.bbox}"
+        )
 
 if __name__ == "__main__":
     main()
