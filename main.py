@@ -9,11 +9,13 @@ import sys
 
 import numpy as np
 
+from src.compositor import arrange_pieces, compose_image
 from src.image_loader import ImageLoadError, load_image
 from src.splitter import create_voronoi_map, extract_pieces
 
 
 PIECE_COUNT = 20
+CANVAS_SCALE = 2 
 
 
 def get_image_path() -> str:
@@ -40,6 +42,9 @@ def main() -> None:
         sys.exit(1)
 
     width, height = image.size
+
+    canvas_width = width * CANVAS_SCALE
+    canvas_height = height * CANVAS_SCALE
 
     print(
         f"画像を読み込みました: {image_path} "
@@ -70,9 +75,50 @@ def main() -> None:
         print(
             f"id={piece.id}, "
             f"size={piece.image.size}, "
-            f"mode={piece.image.mode},"
+            f"mode={piece.image.mode}, "
             f"bbox={piece.bbox}"
         )
+
+    placed_pieces = arrange_pieces(
+        pieces=pieces,
+        canvas_width=canvas_width,
+        canvas_height=canvas_height,
+    )
+    
+
+    print("\n=== 配置情報 ===")
+
+    for placed_piece in placed_pieces:
+        print(
+            f"id={placed_piece.piece.id}, "
+            f"x={placed_piece.x}, "
+            f"y={placed_piece.y}, "
+            f"angle={placed_piece.angle:.2f}, "
+            f"size={placed_piece.image.size}"
+        )   
+
+    for placed_piece in placed_pieces:
+        piece_width, piece_height = placed_piece.image.size
+
+        assert placed_piece.x >= 0
+        assert placed_piece.y >= 0
+        assert placed_piece.x + piece_width <= canvas_width
+        assert placed_piece.y + piece_height <= canvas_height
+    
+    print("\nすべての画像片がキャンバス内に配置されています。")
+
+    composed_image = compose_image(
+        placed_pieces=placed_pieces,
+        canvas_width=canvas_width,
+        canvas_height=canvas_height,
+    )
+
+    print("\n=== 合成画像情報 ===")
+    print(f"size: {composed_image.size}")
+    print(f"mode: {composed_image.mode}")
+
+    composed_image.save("output/composed_image.png")
+    print("\n合成画像を output/composed_image.png に保存しました。")
 
 if __name__ == "__main__":
     main()
