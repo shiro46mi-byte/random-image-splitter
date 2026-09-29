@@ -9,12 +9,16 @@ import sys
 
 import numpy as np
 
-from src.compositor import arrange_pieces, compose_image
+from src.compositor import (
+    arrange_pieces,
+    compose_image,
+    validate_no_overlap,
+)
 from src.image_loader import ImageLoadError, load_image
 from src.splitter import create_voronoi_map, extract_pieces
 
 
-PIECE_COUNT = 20
+PIECE_COUNT = 30
 CANVAS_SCALE = 2 
 
 
@@ -84,7 +88,12 @@ def main() -> None:
         canvas_width=canvas_width,
         canvas_height=canvas_height,
     )
-    
+    assert len(placed_pieces) == len(pieces)
+
+    print(
+        f"\nすべての画像片を配置しました: "
+        f"{len(placed_pieces)}/{len(pieces)}"
+    )    
 
     print("\n=== 配置情報 ===")
 
@@ -106,6 +115,18 @@ def main() -> None:
         assert placed_piece.y + piece_height <= canvas_height
     
     print("\nすべての画像片がキャンバス内に配置されています。")
+
+    if not validate_no_overlap(
+        placed_pieces=placed_pieces,
+        canvas_width=canvas_width,
+        canvas_height=canvas_height,
+    ):
+        raise RuntimeError(
+            "配置された画像片に重なりが検出されました。"
+        )
+
+    print("\n画像片同士に重なりがないことを確認しました。")
+
 
     composed_image = compose_image(
         placed_pieces=placed_pieces,
