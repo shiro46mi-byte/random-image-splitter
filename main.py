@@ -16,7 +16,7 @@ from src.compositor import (
 )
 from src.image_loader import ImageLoadError, load_image
 from src.splitter import create_voronoi_map, extract_pieces
-
+from src.image_saver import save_image
 
 PIECE_COUNT = 30
 CANVAS_SCALE = 2 
@@ -138,8 +138,16 @@ def main() -> None:
     print(f"size: {composed_image.size}")
     print(f"mode: {composed_image.mode}")
 
-    composed_image.save("output/composed_image.png")
-    print("\n合成画像を output/composed_image.png に保存しました。")
+    output_path = "output/composed_image.png"
 
+    save_image(
+        image=composed_image,
+        output_path=output_path,
+    )
+
+    print(
+        f"\n合成画像を {output_path} に保存しました。"
+    )
+    
 if __name__ == "__main__":
     main()
