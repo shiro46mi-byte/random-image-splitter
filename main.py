@@ -18,9 +18,11 @@ from src.image_loader import ImageLoadError, load_image
 from src.splitter import create_voronoi_map, extract_pieces
 from src.image_saver import save_image
 
-PIECE_COUNT = 30
 CANVAS_SCALE = 2 
-
+MIN_PIECE_COUNT = 1
+MAX_PIECE_COUNT = 100
+MIN_ROTATION_ANGLE = 0
+MAX_ROTATION_ANGLE_LIMIT = 360
 
 def get_image_path() -> str:
     """
@@ -34,15 +36,94 @@ def get_image_path() -> str:
 
     return input("画像ファイルパスを入力してください: ").strip()
 
+def get_piece_count() -> int:
+    """
+    コマンドライン引数または標準入力から
+    分割数を取得する。
+
+    Returns:
+        分割数
+    """
+    try:
+        if len(sys.argv) > 2:
+            piece_count = int(sys.argv[2])
+        else:
+            piece_count = int(
+                input("分割数を入力してください: ").strip()
+            )
+
+    except ValueError:
+            raise ValueError(
+                "分割数は整数で指定してください。"
+            )
+
+    if piece_count < MIN_PIECE_COUNT:
+            raise ValueError(
+                f"分割数は {MIN_PIECE_COUNT} 以上で指定してください。"
+            )
+
+    if piece_count > MAX_PIECE_COUNT:
+            raise ValueError(
+                f"分割数は {MAX_PIECE_COUNT} 以下で指定してください。"
+            )
+
+    return piece_count
+
+def get_max_rotation_angle() -> float:
+    """
+    最大回転角を取得する。
+
+    Returns:
+        最大回転角
+    """
+    try:
+        if len(sys.argv) > 3:
+            angle = float(sys.argv[3])
+        else:
+            angle = float(
+                input(
+                    "最大回転角を入力してください (0～360): "
+                ).strip()
+            )
+    except ValueError:
+        raise ValueError(
+            "最大回転角は整数で入力してください。"
+        )
+
+    if angle < MIN_ROTATION_ANGLE:
+        raise ValueError(
+            "最大回転角は0以上で指定してください。"
+        )
+
+    if angle > MAX_ROTATION_ANGLE_LIMIT:
+        raise ValueError(
+            "最大回転角は360以下で指定してください。"
+        )
+
+    return angle
+    
 
 def main() -> None:
     """メイン処理。"""
     image_path = get_image_path()
 
+
     try:
         image = load_image(image_path)
     except ImageLoadError as exc:
         print(f"エラー: {exc}")
+        sys.exit(1)
+
+    try:
+        piece_count = get_piece_count()
+    except ValueError as exc:
+        print(f"エラー: {exc}")
+        sys.exit(1)
+
+    try:
+        max_rotation_angle = get_max_rotation_angle()
+    except ValueError as exc:
+        print(f"エラー：{exc}")
         sys.exit(1)
 
     width, height = image.size
@@ -54,10 +135,12 @@ def main() -> None:
         f"画像を読み込みました: {image_path} "
         f"(サイズ: {width}x{height})"
     )
+    print(f"分割数: {piece_count}")
+    print(f"最大回転角：{max_rotation_angle}")
 
     labels = create_voronoi_map(
         image=image,
-        piece_count=PIECE_COUNT,
+        piece_count=piece_count,
     )
 
     print("\n=== Voronoi Map 情報 ===")
@@ -87,7 +170,9 @@ def main() -> None:
         pieces=pieces,
         canvas_width=canvas_width,
         canvas_height=canvas_height,
+        max_rotation_angle=max_rotation_angle,
     )
+
     assert len(placed_pieces) == len(pieces)
 
     print(
@@ -148,6 +233,6 @@ def main() -> None:
     print(
         f"\n合成画像を {output_path} に保存しました。"
     )
-    
+
 if __name__ == "__main__":
     main()

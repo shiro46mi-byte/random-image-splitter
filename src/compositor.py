@@ -11,7 +11,6 @@ from src.piece import Piece
 
 
 MIN_ROTATION_ANGLE = 0.0
-MAX_ROTATION_ANGLE = 360.0
 MAX_PLACEMENT_ATTEMPTS = 1000
 MAX_LAYOUT_ATTEMPTS = 5
 ALPHA_THRESHOLD = 0
@@ -55,6 +54,7 @@ def arrange_pieces(
     pieces: list[Piece],
     canvas_width: int,
     canvas_height: int,
+    max_rotation_angle: float,
 ) -> list[PlacedPiece]:
     """
     画像片をランダムに回転し、
@@ -111,7 +111,7 @@ def arrange_pieces(
             angle = float(
                 rng.uniform(
                     MIN_ROTATION_ANGLE,
-                    MAX_ROTATION_ANGLE,
+                    max_rotation_angle,
                 )
             )
 
