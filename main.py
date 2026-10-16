@@ -23,6 +23,8 @@ MIN_PIECE_COUNT = 1
 MAX_PIECE_COUNT = 100
 MIN_ROTATION_ANGLE = 0
 MAX_ROTATION_ANGLE_LIMIT = 360
+MIN_SHAPE_VARIATION = 0
+MAX_SHAPE_VARIATION = 100
 
 def get_image_path() -> str:
     """
@@ -101,7 +103,80 @@ def get_max_rotation_angle() -> float:
         )
 
     return angle
-    
+
+def get_shape_variation() -> int:
+    """
+    形状の変化量を取得する。
+
+    Returns:
+        形状の変化量
+    """
+    try:
+        if len(sys.argv) > 4:
+            variation = int(sys.argv[4])
+        else:
+            variation = int(
+                input(
+                    "形状の変化量を入力してください (0～100): "
+                ).strip()
+            )
+    except ValueError:
+        raise ValueError(
+            "形状の変化量は整数で入力してください。"
+        )
+
+    if variation < 0 or variation > 100:
+        raise ValueError(
+            "形状の変化量は0～100の範囲で指定してください。"
+        )
+
+    return variation   
+
+def create_voronoi_map(
+        image: Image.Image,
+        piece_count: int,
+        shape_variation: int,
+) -> np.ndarray:
+    """
+    画像サイズに対するVoronoiラベルマップを生成する。
+
+    Args:
+        image:
+            元画像
+
+        piece_count:
+            分割数
+
+        shape_variation:
+            形状の変化量
+
+    Returns:
+        shape=(height, width) の整数配列
+    """
+    if piece_count <= 0:
+        raise ValueError("piece_countは1以上で指定してください。")
+
+    width, height = image.size
+
+    rng = np.random.default_rng()
+
+    seeds = np.column_stack(
+        (
+            rng.integers(0, width, piece_count),
+            rng.integers(0, height, piece_count),
+        )
+    )
+
+    yy, xx = np.ogrid[:height, :width]
+
+    distances = (
+        (xx[:, :, np.newaxis] - seeds[:, 0]) ** 2
+        + (yy[:, :, np.newaxis] - seeds[:, 1]) ** 2
+    )
+
+    labels = np.argmin(distances, axis=-1)
+
+    return labels
 
 def main() -> None:
     """メイン処理。"""
@@ -126,6 +201,8 @@ def main() -> None:
         print(f"エラー：{exc}")
         sys.exit(1)
 
+
+    shape_variation = get_shape_variation()
     width, height = image.size
 
     canvas_width = width * CANVAS_SCALE
@@ -141,6 +218,7 @@ def main() -> None:
     labels = create_voronoi_map(
         image=image,
         piece_count=piece_count,
+        shape_variation=shape_variation,
     )
 
     print("\n=== Voronoi Map 情報 ===")
